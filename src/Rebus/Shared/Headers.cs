@@ -9,6 +9,11 @@ namespace Rebus.Shared
         /// Specifies that the contents of the message has been encrypted.
         /// </summary>
         public const string Encrypted = "rebus-encrypted";
+        
+        /// <summary>
+        /// Key of header that contains the salt that was used when encrypting this message
+        /// </summary>
+        public const string EncryptionSalt = "rebus-salt";
 
         /// <summary>
         /// Key of header that contains the unique ID of the message.
@@ -44,7 +49,22 @@ namespace Rebus.Shared
         /// </summary>
         public const string SourceQueue = "rebus-source-queue";
 
+        /// <summary>
+        /// Specifies the type of the content included in the body of the message.
+        /// </summary>
         public const string ContentType = "rebus-content-type";
+
+        /// <summary>
+        /// In the event that the content is some kind of string, this header indicates which encoding was used
+        /// when serializing the string.
+        /// </summary>
         public const string Encoding = "rebus-encoding";
+        
+        /// <summary>
+        /// Indicates that this message may be delivered faster if it is possible, most likely at the expense of
+        /// delivery guarantee. E.g. a message queue might not durably persist the message when this header is
+        /// added, which might lead to message loss in the event of a server crash.
+        /// </summary>
+        public const string Express = "rebus-express";
     }
 }

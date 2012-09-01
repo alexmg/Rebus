@@ -39,20 +39,24 @@
     <AssemblyOriginatorKeyFile>..\Rebus.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Autofac">
-      <HintPath>..\packages\Autofac.2.6.1.841\lib\NET40\Autofac.dll</HintPath>
+    <Reference Include="Autofac, Version=2.6.3.862, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Autofac.2.6.3.862\lib\NET40\Autofac.dll</HintPath>
     </Reference>
-    <Reference Include="Autofac.Configuration">
-      <HintPath>..\packages\Autofac.2.6.1.841\lib\NET40\Autofac.Configuration.dll</HintPath>
+    <Reference Include="Autofac.Configuration, Version=2.6.3.862, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Autofac.2.6.3.862\lib\NET40\Autofac.Configuration.dll</HintPath>
     </Reference>
     <Reference Include="BouncyCastle.Crypto, Version=1.7.4137.9688, Culture=neutral, PublicKeyToken=a4292a325f69b123, processorArchitecture=MSIL">
       <HintPath>..\packages\RavenDB.Database.1.0.960\lib\net40\BouncyCastle.Crypto.dll</HintPath>
     </Reference>
-    <Reference Include="Castle.Core">
-      <HintPath>..\packages\Castle.Core.3.0.0.4001\lib\net40-client\Castle.Core.dll</HintPath>
+    <Reference Include="Castle.Core, Version=3.1.0.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Castle.Core.3.1.0\lib\net40-client\Castle.Core.dll</HintPath>
     </Reference>
-    <Reference Include="Castle.Windsor">
-      <HintPath>..\packages\Castle.Windsor.3.0.0.4001\lib\net40\Castle.Windsor.dll</HintPath>
+    <Reference Include="Castle.Windsor, Version=3.1.0.0, Culture=neutral, PublicKeyToken=407dd0808d44fbdc, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Castle.Windsor.3.1.0\lib\net40\Castle.Windsor.dll</HintPath>
     </Reference>
     <Reference Include="Esent.Interop, Version=1.7.0.0, Culture=neutral, PublicKeyToken=8dd49bbdae3f61af, processorArchitecture=MSIL">
       <HintPath>..\packages\RavenDB.Database.1.0.960\lib\net40\Esent.Interop.dll</HintPath>
@@ -76,23 +80,34 @@
     <Reference Include="Microsoft.Practices.ServiceLocation">
       <HintPath>..\packages\CommonServiceLocator.1.0\lib\NET35\Microsoft.Practices.ServiceLocation.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Practices.Unity">
-      <HintPath>..\packages\Unity.2.1.505.0\lib\NET35\Microsoft.Practices.Unity.dll</HintPath>
+    <Reference Include="Microsoft.Practices.Unity, Version=2.1.505.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Unity.2.1.505.2\lib\NET35\Microsoft.Practices.Unity.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.Practices.Unity.Configuration">
-      <HintPath>..\packages\Unity.2.1.505.0\lib\NET35\Microsoft.Practices.Unity.Configuration.dll</HintPath>
+    <Reference Include="Microsoft.Practices.Unity.Configuration, Version=2.1.505.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Unity.2.1.505.2\lib\NET35\Microsoft.Practices.Unity.Configuration.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.WindowsAzure.StorageClient, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\WindowsAzure.Storage.1.6\lib\net35-full\Microsoft.WindowsAzure.StorageClient.dll</HintPath>
+    <Reference Include="Microsoft.WindowsAzure.Configuration, Version=1.7.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\Microsoft.WindowsAzure.ConfigurationManager.1.7.0.3\lib\net35-full\Microsoft.WindowsAzure.Configuration.dll</HintPath>
     </Reference>
-    <Reference Include="MongoDB.Bson">
-      <HintPath>..\packages\mongocsharpdriver.1.3\lib\net35\MongoDB.Bson.dll</HintPath>
+    <Reference Include="Microsoft.WindowsAzure.StorageClient, Version=1.7.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\WindowsAzure.Storage.1.7.0.0\lib\net35-full\Microsoft.WindowsAzure.StorageClient.dll</HintPath>
     </Reference>
-    <Reference Include="MongoDB.Driver">
-      <HintPath>..\packages\mongocsharpdriver.1.3\lib\net35\MongoDB.Driver.dll</HintPath>
+    <Reference Include="MongoDB.Bson, Version=1.5.0.4566, Culture=neutral, PublicKeyToken=f686731cfb9cc103, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\mongocsharpdriver.1.5\lib\net35\MongoDB.Bson.dll</HintPath>
+    </Reference>
+    <Reference Include="MongoDB.Driver, Version=1.5.0.4566, Culture=neutral, PublicKeyToken=f686731cfb9cc103, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\mongocsharpdriver.1.5\lib\net35\MongoDB.Driver.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=4.0.8.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.4.0.8\lib\net40\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="Ninject">
+      <HintPath>..\packages\Ninject.3.0.1.10\lib\net40\Ninject.dll</HintPath>
     </Reference>
     <Reference Include="NLog, Version=2.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
       <HintPath>..\packages\NLog.2.0.0.2000\lib\net40\NLog.dll</HintPath>
@@ -106,8 +121,9 @@
     <Reference Include="pnunit.framework">
       <HintPath>..\packages\NUnit.2.5.10.11092\lib\pnunit.framework.dll</HintPath>
     </Reference>
-    <Reference Include="RabbitMQ.Client, Version=2.8.1.0, Culture=neutral, PublicKeyToken=89e7d7c5feba84ce, processorArchitecture=MSIL">
-      <HintPath>..\packages\RabbitMQ.Client.2.8.1\lib\net30\RabbitMQ.Client.dll</HintPath>
+    <Reference Include="RabbitMQ.Client, Version=2.8.4.0, Culture=neutral, PublicKeyToken=89e7d7c5feba84ce, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\RabbitMQ.Client.2.8.4\lib\net30\RabbitMQ.Client.dll</HintPath>
     </Reference>
     <Reference Include="Raven.Abstractions, Version=1.0.0.0, Culture=neutral, PublicKeyToken=37f41c7f99471593, processorArchitecture=MSIL">
       <HintPath>..\packages\RavenDB.Client.1.0.960\lib\net40\Raven.Abstractions.dll</HintPath>
@@ -148,8 +164,9 @@
     <Reference Include="Spatial4n.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=9f9456e1ca16d45e, processorArchitecture=MSIL">
       <HintPath>..\packages\RavenDB.Database.1.0.960\lib\net40\Spatial4n.Core.dll</HintPath>
     </Reference>
-    <Reference Include="StructureMap">
-      <HintPath>..\packages\structuremap.2.6.3\lib\StructureMap.dll</HintPath>
+    <Reference Include="StructureMap, Version=2.6.4.0, Culture=neutral, PublicKeyToken=e60ad81abae3c223, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\structuremap.2.6.4.1\lib\net40\StructureMap.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.Composition" />
@@ -180,11 +197,11 @@
     <Compile Include="Configuration\TestConfigurationApi.cs" />
     <Compile Include="Configuration\TestDetermineDestinationFromConfigurationSection.cs" />
     <Compile Include="Configuration\TestDetermineDestinationFromNServiceBusEndpointMappings.cs" />
-    <Compile Include="Configuration\TestDiscoveryConfigurer.cs" />
     <Compile Include="Configuration\TestRearrangeHandlersPipelineInspector.cs" />
     <Compile Include="Configuration\TestRebusConfigurationSection.cs" />
     <Compile Include="Configuration\TestStandardAppConfigLoader.cs" />
     <Compile Include="Contracts\ContainerAdapters\Factories\AutofacContainerAdapterFactory.cs" />
+    <Compile Include="Contracts\ContainerAdapters\Factories\NinjectContainerAdapterFactory.cs" />
     <Compile Include="Contracts\ContainerAdapters\Factories\StructureMapContainerAdapterFactory.cs" />
     <Compile Include="Contracts\ContainerAdapters\Factories\UnityContainerAdapterFactory.cs" />
     <Compile Include="Contracts\ContainerAdapters\TestContainerAdapters.cs" />
@@ -206,11 +223,14 @@
     <Compile Include="Bugs\SubscribingToMessagesNotInBCLOrExecutingAssembly.cs" />
     <Compile Include="Integration\TestBusAndDispatcherWithMongoSaga.cs" />
     <Compile Include="Integration\TestMessageDeferral.cs" />
+    <Compile Include="Integration\TestOneWayClientMode.cs" />
     <Compile Include="Integration\TestPipelineOps.cs" />
     <Compile Include="Integration\TestRebusEvents.cs" />
     <Compile Include="Integration\TestRebusOnRabbit.cs" />
     <Compile Include="Integration\TestSagas.cs" />
-    <Compile Include="Integration\TestTimeoutService.cs" />
+    <Compile Include="Testing\TestSagaFixture.cs" />
+    <Compile Include="Timeout\TestTimeoutConfigurationSection.cs" />
+    <Compile Include="Timeout\TestTimeoutService.cs" />
     <Compile Include="Logging\TestRebusLoggerFactory.cs" />
     <Compile Include="MessageReceiverForTesting.cs" />
     <Compile Include="Integration\TestRetryLogic.cs" />
@@ -258,6 +278,7 @@
     <Compile Include="Persistence\Timeouts\TestTimeoutStorage.cs" />
     <Compile Include="Serialization\Json\TestJsonMessageSerializer.cs" />
     <Compile Include="Transports\Encrypted\TestRijndaelEncryptionTransportDecorator.cs" />
+    <Compile Include="Transports\Encrypted\TestRijndaelHelper.cs" />
     <Compile Include="Transports\Rabbit\RabbitMqFixtureBase.cs" />
     <Compile Include="Serialization\TestDictionarySerializer.cs" />
     <Compile Include="Transports\Msmq\TestMsmqMessageQueue.cs" />
@@ -292,9 +313,17 @@
     <Compile Include="Unit\TestWorker_MessageContext.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Timeout\AppConfigExamples\app.config.01.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
+    </Content>
+    <Content Include="Timeout\AppConfigExamples\app.config.02.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="App.config" />
     <Content Include="Configuration\RealAppConfigs\App.1.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
     </Content>
     <None Include="packages.config" />
   </ItemGroup>
@@ -322,6 +351,10 @@
     <ProjectReference Include="..\Rebus.MongoDb\Rebus.MongoDb.csproj">
       <Project>{81686CC0-5387-4990-AF61-00CDAA972B81}</Project>
       <Name>Rebus.MongoDb</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Rebus.Ninject\Rebus.Ninject.csproj">
+      <Project>{9FDF3178-567A-4EF1-81C6-5FF42AE103DF}</Project>
+      <Name>Rebus.Ninject</Name>
     </ProjectReference>
     <ProjectReference Include="..\Rebus.RabbitMQ\Rebus.RabbitMQ.csproj">
       <Project>{5836C347-90FC-4628-B4A1-16926B6CA781}</Project>

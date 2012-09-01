@@ -14,6 +14,8 @@ namespace Rebus.Transports.Msmq
     public class MsmqMessageQueue : ISendMessages, IReceiveMessages, IDisposable
     {
         static ILog log;
+        readonly object disposeLock = new object();
+        bool disposed;
 
         static MsmqMessageQueue()
         {
@@ -129,7 +131,7 @@ because there would be remote calls involved when you wanted to receive a messag
 
         public void Send(string destinationQueueName, TransportMessageToSend message)
         {
-            var recipientPath = MsmqUtil.GetFullPath(destinationQueueName);
+            var recipientPath = MsmqUtil.GetSenderPath(destinationQueueName);
 
             using (var outputQueue = GetMessageQueue(recipientPath))
             {
@@ -160,11 +162,23 @@ because there would be remote calls involved when you wanted to receive a messag
 
         public void Dispose()
         {
-            log.Info("Disposing message queue {0}", inputQueuePath);
+            if (disposed) return;
 
-            if (inputQueue != null)
+            lock (disposeLock)
             {
-                inputQueue.Dispose();
+                if (disposed) return;
+
+                try
+                {
+                    if (inputQueue == null) return;
+
+                    log.Info("Disposing message queue {0}", inputQueuePath);
+                    inputQueue.Dispose();
+                }
+                finally
+                {
+                    disposed = true;
+                }
             }
         }
 
@@ -188,15 +202,11 @@ because there would be remote calls involved when you wanted to receive a messag
 
         MessageQueue GetMessageQueue(string path)
         {
-            var queue = new MessageQueue(path);
-            var messageQueue = queue;
-            messageQueue.Formatter = new RebusTransportMessageFormatter();
-            var messageReadPropertyFilter = new MessagePropertyFilter();
-            messageReadPropertyFilter.Id = true;
-            messageReadPropertyFilter.Body = true;
-            messageReadPropertyFilter.Extension = true;
-            messageReadPropertyFilter.Label = true;
-            messageQueue.MessageReadPropertyFilter = messageReadPropertyFilter;
+            var messageQueue = new MessageQueue(path)
+                {
+                    Formatter = new RebusTransportMessageFormatter(),
+                    MessageReadPropertyFilter = RebusTransportMessageFormatter.PropertyFilter
+                };
             return messageQueue;
         }
 

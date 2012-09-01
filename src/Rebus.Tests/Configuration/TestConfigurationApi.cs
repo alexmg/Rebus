@@ -1,20 +1,17 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using NUnit.Framework;
+using Rebus.Bus;
 using Rebus.Configuration;
 using Rebus.Log4Net;
 using Rebus.Logging;
 using Rebus.Persistence.SqlServer;
-using Rebus.Serialization;
 using Rebus.Serialization.Json;
-using Rebus.Shared;
 using Rebus.Tests.Persistence;
 using Rebus.Transports.Encrypted;
 using Rebus.Transports.Msmq;
 using Shouldly;
-using System.Linq;
 using Rebus.MongoDb;
 
 namespace Rebus.Tests.Configuration
@@ -23,17 +20,65 @@ namespace Rebus.Tests.Configuration
     public class TestConfigurationApi : FixtureBase
     {
         [Test]
-        public void ConfiguringLoggingDoesNotRegisterTwoHandlerActivators()
+        public void CanConfigureEvents()
+        {
+            var adapter = new TestContainerAdapter();
+            var raisedEvents = new List<string>();
+
+            var configurer = Configure.With(adapter)
+                .Events(e =>
+                    {
+                        e.BeforeTransportMessage += delegate { raisedEvents.Add("before transport message"); };
+                        e.BeforeMessage += delegate { raisedEvents.Add("before message"); };
+                        e.AfterMessage += delegate { raisedEvents.Add("after message"); };
+                        e.AfterTransportMessage += delegate { raisedEvents.Add("after transport message"); };
+
+                        e.MessageSent += delegate { raisedEvents.Add("message sent"); };
+                        e.PoisonMessage += delegate { raisedEvents.Add("poison message"); };
+                    })
+                .Transport(t => t.UseMsmqAndGetInputQueueNameFromAppConfig());
+
+            var bus = (IAdvancedBus)configurer.CreateBus();
+            var events = ((RebusEvents) bus.Events);
+            
+            events.RaiseBeforeTransportMessage(null, null);
+            events.RaiseBeforeMessage(null, null);
+            events.RaiseAfterMessage(null, null, null);
+            events.RaiseAfterTransportMessage(null, null, null);
+            events.RaiseMessageSent(null, null, null);
+            events.RaisePoisonMessage(null, null);
+
+            raisedEvents.ShouldContain("before transport message");
+            raisedEvents.ShouldContain("before message");
+            raisedEvents.ShouldContain("after message");
+            raisedEvents.ShouldContain("after transport message");
+            raisedEvents.ShouldContain("message sent");
+            raisedEvents.ShouldContain("poison message");
+        }
+
+        [Test]
+        public void CanConfigureEncryption()
+        {
+            var configurer = Configure.With(new TestContainerAdapter())
+                .Transport(t => t.UseMsmqAndGetInputQueueNameFromAppConfig())
+                .Decorators(d => d.EncryptMessageBodies());
+
+            configurer.CreateBus();
+
+            configurer.Backbone.SendMessages.ShouldBeTypeOf<RijndaelEncryptionTransportDecorator>();
+            configurer.Backbone.ReceiveMessages.ShouldBeTypeOf<RijndaelEncryptionTransportDecorator>();
+        }
+
+        [Test]
+        public void ConfiguringLoggingRegistersHandlerActivator()
         {
             var adapter = new TestContainerAdapter();
 
-            Configure.With(adapter)
+            var configurer = Configure.With(adapter)
                 .Logging(l => l.None())
                 .Serialization(s => s.UseJsonSerializer());
 
-            adapter.Registrations
-                .Count(r => r.ServiceTypes.Contains(typeof(IActivateHandlers)))
-                .ShouldBe(1);
+            configurer.Backbone.ActivateHandlers.ShouldNotBe(null);
         }
 
         [Test]
@@ -41,26 +86,11 @@ namespace Rebus.Tests.Configuration
         {
             var adapter = new TestContainerAdapter();
 
-            Configure.With(adapter)
+            var configurer = Configure.With(adapter)
                 .Logging(l => l.None())
                 .Serialization(s => s.UseJsonSerializer());
 
-            adapter.Registrations
-                .Count(r => r.ServiceTypes.Contains(typeof(IActivateHandlers)))
-                .ShouldBe(1);
-        }
-
-        [Test]
-        public void CanConfigureDiscovery()
-        {
-            var adapter = new TestContainerAdapter();
-
-            Configure.With(adapter)
-                .DetermineEndpoints(d => d.FromRebusConfigurationSection())
-                .Discovery(d =>
-                               {
-                                   d.Handlers.LoadFrom(Assembly.GetExecutingAssembly());
-                               });
+            configurer.Backbone.ActivateHandlers.ShouldNotBe(null);
         }
 
         [Test]
@@ -106,13 +136,13 @@ namespace Rebus.Tests.Configuration
         public void CanConfigureHandlerOrdering()
         {
             var adapter = new TestContainerAdapter();
-
-            Configure.With(adapter)
+            
+            var configurer = Configure.With(adapter)
                 .SpecifyOrderOfHandlers(h => h.First<SomeType>().Then<AnotherType>());
 
-            var registration = adapter.Registrations.Single(r => r.Instance.GetType() == typeof(RearrangeHandlersPipelineInspector));
+            configurer.Backbone.InspectHandlerPipeline.ShouldBeTypeOf<RearrangeHandlersPipelineInspector>();
 
-            var inspector = (RearrangeHandlersPipelineInspector)registration.Instance;
+            var inspector = (RearrangeHandlersPipelineInspector)configurer.Backbone.InspectHandlerPipeline;
             var order = inspector.GetOrder();
             order[0].ShouldBe(typeof(SomeType));
             order[1].ShouldBe(typeof(AnotherType));
@@ -123,16 +153,16 @@ namespace Rebus.Tests.Configuration
         {
             var adapter = new TestContainerAdapter();
 
-            Configure.With(adapter)
+            var configurer = Configure.With(adapter)
                 .Transport(t => t.UseMsmq("some_input_queue", "some_error_queue"));
 
-            var registrations = adapter.Registrations
-                .Where(r => r.Instance.GetType() == typeof(MsmqMessageQueue))
-                .ToList();
+            configurer.Backbone.SendMessages.ShouldBeTypeOf<MsmqMessageQueue>();
+            configurer.Backbone.ReceiveMessages.ShouldBeTypeOf<MsmqMessageQueue>();
 
-            registrations.Count.ShouldBe(2);
+            configurer.Backbone.SendMessages.ShouldBeSameAs(configurer.Backbone.ReceiveMessages);
 
-            var msmqMessageQueue = (MsmqMessageQueue)registrations.First().Instance;
+            var msmqMessageQueue = (MsmqMessageQueue) configurer.Backbone.SendMessages;
+
             msmqMessageQueue.InputQueue.ShouldBe("some_input_queue");
         }
 
@@ -141,16 +171,16 @@ namespace Rebus.Tests.Configuration
         {
             var adapter = new TestContainerAdapter();
 
-            Configure.With(adapter)
+            var configurer = Configure.With(adapter)
                 .Transport(t => t.UseMsmqAndGetInputQueueNameFromAppConfig());
 
-            var registrations = adapter.Registrations
-                .Where(r => r.Instance.GetType() == typeof(MsmqMessageQueue))
-                .ToList();
+            configurer.Backbone.SendMessages.ShouldBeTypeOf<MsmqMessageQueue>();
+            configurer.Backbone.ReceiveMessages.ShouldBeTypeOf<MsmqMessageQueue>();
 
-            registrations.Count.ShouldBe(2);
+            configurer.Backbone.SendMessages.ShouldBeSameAs(configurer.Backbone.ReceiveMessages);
 
-            var msmqMessageQueue = (MsmqMessageQueue)registrations.First().Instance;
+            var msmqMessageQueue = (MsmqMessageQueue)configurer.Backbone.SendMessages;
+
             msmqMessageQueue.InputQueue.ShouldBe("this.is.my.input.queue");
         }
 
@@ -161,18 +191,19 @@ namespace Rebus.Tests.Configuration
 
             const string connectionstring = "connectionString";
 
-            Configure.With(adapter)
+            var configurer = Configure.With(adapter)
                 .Sagas(s => s.StoreInSqlServer(connectionstring, "saga_table", "saga_index_table"))
                 .Subscriptions(s => s.StoreInSqlServer(connectionstring, "subscriptions"));
 
-            var sagaRegistration = adapter.Registrations.Single(r => r.Instance.GetType() == typeof(SqlServerSagaPersister));
-            var subRegistration = adapter.Registrations.Single(r => r.Instance.GetType() == typeof(SqlServerSubscriptionStorage));
+            configurer.Backbone.StoreSagaData.ShouldBeTypeOf<SqlServerSagaPersister>();
+            configurer.Backbone.StoreSubscriptions.ShouldBeTypeOf<SqlServerSubscriptionStorage>();
 
-            var sagaPersister = (SqlServerSagaPersister)sagaRegistration.Instance;
+
+            var sagaPersister = (SqlServerSagaPersister)configurer.Backbone.StoreSagaData;
             sagaPersister.SagaTableName.ShouldBe("saga_table");
             sagaPersister.SagaIndexTableName.ShouldBe("saga_index_table");
 
-            var subscriptionStorage = (SqlServerSubscriptionStorage)subRegistration.Instance;
+            var subscriptionStorage = (SqlServerSubscriptionStorage)configurer.Backbone.StoreSubscriptions;
             subscriptionStorage.SubscriptionsTableName.ShouldBe("subscriptions");
         }
 
@@ -181,11 +212,10 @@ namespace Rebus.Tests.Configuration
         {
             var adapter = new TestContainerAdapter();
 
-            Configure.With(adapter)
+            var configurer = Configure.With(adapter)
                 .Serialization(s => s.UseJsonSerializer());
 
-            var registration = adapter.Registrations.Single(r => r.Instance.GetType() == typeof(JsonMessageSerializer));
-            var serializer = (JsonMessageSerializer)registration.Instance;
+            configurer.Backbone.SerializeMessages.ShouldBeTypeOf<JsonMessageSerializer>();
         }
 
         [Test]
@@ -204,28 +234,18 @@ namespace Rebus.Tests.Configuration
         {
             var adapter = new TestContainerAdapter();
 
-            Configure.With(adapter)
+            var configurer = Configure.With(adapter)
                 .Transport(t => t.UseMsmq("some_input_queue_name", "some_error_queue"))
-                .DetermineEndpoints(d => d.FromNServiceBusConfiguration())
-                .CreateBus();
+                .DetermineEndpoints(d => d.FromNServiceBusConfiguration());
 
-            adapter.HasImplementationOf(typeof(IActivateHandlers)).ShouldBe(true);
-            adapter.HasImplementationOf(typeof(IStoreSubscriptions)).ShouldBe(true);
-            adapter.HasImplementationOf(typeof(IStoreSagaData)).ShouldBe(true);
-            adapter.HasImplementationOf(typeof(IInspectHandlerPipeline)).ShouldBe(true);
-            adapter.HasImplementationOf(typeof(ISerializeMessages)).ShouldBe(true);
-        }
+            configurer.CreateBus();
 
-        [Test]
-        public void CanConfigureEncryptedMsmqTransport()
-        {
-            var adapter = new TestContainerAdapter();
-
-            Configure.With(adapter)
-                .Transport(t => t.UseEncryptedMsmqAndGetConfigurationFromAppConfig());
-
-            adapter.Resolve<ISendMessages>().ShouldBeTypeOf<RijndaelEncryptionTransportDecorator>();
-            adapter.Resolve<IReceiveMessages>().ShouldBeTypeOf<RijndaelEncryptionTransportDecorator>();
+            configurer.Backbone.ActivateHandlers.ShouldNotBe(null);
+            configurer.Backbone.StoreSagaData.ShouldNotBe(null);
+            configurer.Backbone.StoreSubscriptions.ShouldNotBe(null);
+            configurer.Backbone.InspectHandlerPipeline.ShouldNotBe(null);
+            configurer.Backbone.SerializeMessages.ShouldNotBe(null);
+            configurer.Backbone.DetermineDestination.ShouldNotBe(null);
         }
 
         [Test]
@@ -235,74 +255,25 @@ namespace Rebus.Tests.Configuration
 
             Configure.With(adapter)
                 .Sagas(s => s.StoreInMongoDb(MongoDbFixtureBase.ConnectionString)
-                                .SetCollectionName<string>("string_sagas")
-                                .SetCollectionName<DateTime>("datetime_sagas"));
+                                .SetCollectionName<FirstSagaData>("string_sagas")
+                                .SetCollectionName<SecondSagaData>("datetime_sagas"));
 
         }
 
-        /// <summary>
-        /// Look ma! - an IoC container.... :)
-        /// </summary>
-        class TestContainerAdapter : IContainerAdapter
+        class FirstSagaData: ISagaData
         {
-            interface IResolver
-            {
-                object Get();
-            }
-            class InstanceResolver : IResolver
-            {
-                readonly object instance;
-                public InstanceResolver(object instance)
-                {
-                    this.instance = instance;
-                }
+            public Guid Id { get; set; }
+            public int Revision { get; set; }
+        }
 
-                public object Get()
-                {
-                    return instance;
-                }
-            }
-            class RecursiveTypeMappingResolver : IResolver
-            {
-                readonly Type implementationType;
-                readonly IContainerAdapter container;
-                readonly bool singleton;
-                object cachedInstance;
+        class SecondSagaData: ISagaData
+        {
+            public Guid Id { get; set; }
+            public int Revision { get; set; }
+        }
 
-                public RecursiveTypeMappingResolver(Type implementationType, IContainerAdapter container, bool singleton)
-                {
-                    this.implementationType = implementationType;
-                    this.container = container;
-                    this.singleton = singleton;
-                }
-
-                public object Get()
-                {
-                    if (singleton && cachedInstance != null) return cachedInstance;
-
-                    try
-                    {
-                        var constructor = implementationType.GetConstructors().First();
-                        var parameters = constructor.GetParameters()
-                            .Select(p => container.GetType()
-                                             .GetMethod("Resolve")
-                                             .MakeGenericMethod(p.ParameterType).Invoke(container, new object[0]))
-                            .ToArray();
-
-                        cachedInstance = Activator.CreateInstance(implementationType, parameters);
-
-                        return cachedInstance;
-                    }
-                    catch (Exception e)
-                    {
-                        throw new ApplicationException(string.Format("Could not resolve {0}", implementationType), e);
-                    }
-                }
-            }
-
-            readonly Dictionary<Type, List<IResolver>> resolvers = new Dictionary<Type, List<IResolver>>();
-            readonly List<Registration> registrations = new List<Registration>();
-
+        public class TestContainerAdapter : IContainerAdapter
+        {
             public IEnumerable<IHandleMessages<T>> GetHandlerInstancesFor<T>()
             {
                 throw new NotImplementedException();
@@ -313,78 +284,15 @@ namespace Rebus.Tests.Configuration
                 throw new NotImplementedException();
             }
 
-            public void RegisterInstance(object instance, params Type[] serviceTypes)
+            public void SaveBusInstances(IBus bus, IAdvancedBus advancedBus)
             {
-                registrations.Add(new Registration(instance, serviceTypes));
-
-                foreach (var type in serviceTypes)
-                {
-                    AddResolver(type, new InstanceResolver(instance));
-                }
+                Bus = bus;
+                AdvancedBus = advancedBus;
             }
 
-            public IEnumerable<Registration> Registrations
-            {
-                get { return registrations; }
-            }
+            public IBus Bus { get; set; }
 
-            public void Register(Type implementationType, Lifestyle lifestyle, params Type[] serviceTypes)
-            {
-                foreach (var type in serviceTypes)
-                {
-                    AddResolver(type, new RecursiveTypeMappingResolver(implementationType, this, lifestyle == Lifestyle.Singleton));
-                }
-            }
-
-            void AddResolver(Type type, IResolver resolver)
-            {
-                if (!resolvers.ContainsKey(type))
-                    resolvers[type] = new List<IResolver>();
-
-                resolvers[type].Add(resolver);
-            }
-
-            public bool HasImplementationOf(Type serviceType)
-            {
-                return resolvers.ContainsKey(serviceType);
-            }
-
-            public TService Resolve<TService>()
-            {
-                return (TService)resolvers[typeof(TService)].First().Get();
-            }
-
-            public TService[] ResolveAll<TService>()
-            {
-                throw new NotImplementedException();
-            }
-
-            public void Release(object obj)
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        class Registration
-        {
-            readonly object instance;
-            readonly Type[] serviceTypes;
-
-            public Registration(object instance, Type[] serviceTypes)
-            {
-                this.instance = instance;
-                this.serviceTypes = serviceTypes;
-            }
-
-            public object Instance
-            {
-                get { return instance; }
-            }
-
-            public Type[] ServiceTypes
-            {
-                get { return serviceTypes; }
-            }
+            public IAdvancedBus AdvancedBus { get; set; }
         }
     }
 

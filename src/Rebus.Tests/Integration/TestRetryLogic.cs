@@ -1,6 +1,7 @@
 using System;
 using System.Messaging;
 using System.Text;
+using System.Transactions;
 using NUnit.Framework;
 using Rebus.Logging;
 using Rebus.Persistence.InMemory;
@@ -97,6 +98,10 @@ namespace Rebus.Tests.Integration
         [TestCase("beforeLogical")]
         [TestCase("afterLogical")]
         [TestCase("poison")]
+        [TestCase("commitHook", Ignore = true)]
+        [TestCase("rollbackHook", Ignore = true)]
+        [TestCase("prepareHook", Ignore = true)]
+        [TestCase("inDoubtHook", Ignore = true)]
         public void CanMoveMessageToErrorQueueForExceptionsInHooks(string whenToThrow)
         {
             // arrange
@@ -150,6 +155,35 @@ namespace Rebus.Tests.Integration
                             throw new Exception("HELLO!");
                         };
                     break;
+
+                case "commitHook":
+                    activator.Handle<string>(str => Transaction.Current
+                                                        .EnlistVolatile(new ThingToEnlistThatWillFailOn(commit: true),
+                                                                       EnlistmentOptions.None));
+                    break;
+
+                case "rollbackHook":
+                    activator.Handle<string>(str =>
+                        {
+                            Transaction.Current
+                                .EnlistVolatile(new ThingToEnlistThatWillFailOn(rollback: true),
+                                                EnlistmentOptions.None);
+
+                            throw new Exception("HELLO!");
+                        });
+                    break;
+
+                case "prepareHook":
+                    activator.Handle<string>(str => Transaction.Current
+                                                        .EnlistVolatile(new ThingToEnlistThatWillFailOn(prepare: true),
+                                                                       EnlistmentOptions.None));
+                    break;
+
+                case "inDoubtHook":
+                    activator.Handle<string>(str => Transaction.Current
+                                                        .EnlistVolatile(new ThingToEnlistThatWillFailOn(inDoubt: true),
+                                                                       EnlistmentOptions.None));
+                    break;
             }
 
             bus.Start(1);
@@ -176,6 +210,62 @@ namespace Rebus.Tests.Integration
                             };
             queue.Purge();
             return queue;
+        }
+    }
+
+    public class ThingToEnlistThatWillFailOn : IEnlistmentNotification
+    {
+        readonly bool prepare;
+        readonly bool commit;
+        readonly bool rollback;
+        readonly bool inDoubt;
+
+        public ThingToEnlistThatWillFailOn(bool prepare = false, bool commit = false, bool rollback = false, bool inDoubt = false)
+        {
+            this.prepare = prepare;
+            this.commit = commit;
+            this.rollback = rollback;
+            this.inDoubt = inDoubt;
+        }
+
+        public void Prepare(PreparingEnlistment preparingEnlistment)
+        {
+            Console.WriteLine("preparing...");
+            if (prepare) throw new OmfgExceptionThisIsBad("prepareHook");
+            preparingEnlistment.Prepared();
+            Console.WriteLine("done preparing!");
+        }
+
+        public void Commit(Enlistment enlistment)
+        {
+            Console.WriteLine("committing...");
+            if (commit) throw new OmfgExceptionThisIsBad("commitHook");
+            enlistment.Done();
+            Console.WriteLine("done committing!");
+        }
+
+        public void Rollback(Enlistment enlistment)
+        {
+            Console.WriteLine("rollbacking...");
+            if (rollback) throw new OmfgExceptionThisIsBad("rollbackHook");
+            enlistment.Done();
+            Console.WriteLine("done rollbacking!");
+        }
+
+        public void InDoubt(Enlistment enlistment)
+        {
+            Console.WriteLine("indoubting...");
+            if (inDoubt) throw new OmfgExceptionThisIsBad("inDoubtHook");
+            enlistment.Done();
+            Console.WriteLine("done indoubting!");
+        }
+    }
+
+    public class OmfgExceptionThisIsBad : Exception
+    {
+        public OmfgExceptionThisIsBad(string message)
+            : base(message)
+        {
         }
     }
 }

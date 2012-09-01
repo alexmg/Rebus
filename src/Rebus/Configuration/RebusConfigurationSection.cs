@@ -11,6 +11,7 @@ namespace Rebus.Configuration
         const string AddressAttributeName = "address";
         const string ErrorQueueAttributeName = "errorQueue";
         const string WorkersAttributeName = "workers";
+        const string RetriesAttributeName = "maxRetries";
         const string ConfigSectionName = "rebus";
 
         [ConfigurationProperty(RijndaelCollectionPropertyName)]
@@ -27,7 +28,7 @@ namespace Rebus.Configuration
             set { this[MappingsCollectionPropertyName] = value; }
         }
 
-        [ConfigurationProperty(InputQueueAttributeName, IsRequired = true)]
+        [ConfigurationProperty(InputQueueAttributeName)]
         public string InputQueue
         {
             get { return (string)this[InputQueueAttributeName]; }
@@ -41,7 +42,7 @@ namespace Rebus.Configuration
             set { this[AddressAttributeName] = value; }
         }
 
-        [ConfigurationProperty(ErrorQueueAttributeName, IsRequired = true)]
+        [ConfigurationProperty(ErrorQueueAttributeName)]
         public string ErrorQueue
         {
             get { return (string)this[ErrorQueueAttributeName]; }
@@ -55,10 +56,17 @@ namespace Rebus.Configuration
             set { this[WorkersAttributeName] = value; }
         }
 
+        [ConfigurationProperty(RetriesAttributeName)]
+        public int? MaxRetries
+        {
+            get { return (int?)this[RetriesAttributeName]; }
+            set { this[RetriesAttributeName] = value; }
+        }
+
         public const string ExampleSnippetForErrorMessages = @"
 
-    <rebus inputQueue=""this.is.my.input.queue"" errorQueue=""this.is.my.error.queue"" workers=""5"">
-        <rijndael iv=""base64 encoded initialization vector"" key=""base64 encoded key""/>
+    <rebus inputQueue=""myService.input"" errorQueue=""myService.error"" workers=""5"">
+        <rijndael key=""base64 encoded key""/>
         <endpoints>
             <add messages=""Name.Of.Assembly"" endpoint=""message_owner_1""/>
             <add messages=""Namespace.ClassName, Name.Of.Another.Assembly"" endpoint=""message_owner_2""/>

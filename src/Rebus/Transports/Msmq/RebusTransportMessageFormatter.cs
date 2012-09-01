@@ -16,13 +16,14 @@ namespace Rebus.Transports.Msmq
     {
         public static readonly Encoding HeaderEcoding = Encoding.UTF7;
 
-        public static MessagePropertyFilter PropertyFilter = new MessagePropertyFilter
-                                                                 {
-                                                                     Id = true,
-                                                                     Body = true,
-                                                                     Extension = true,
-                                                                     Label = true,
-                                                                 };
+        public static MessagePropertyFilter PropertyFilter
+            = new MessagePropertyFilter
+                {
+                    Id = true,
+                    Body = true,
+                    Extension = true,
+                    Label = true,
+                };
 
         static readonly DictionarySerializer DictionarySerializer = new DictionarySerializer();
 
@@ -42,12 +43,17 @@ namespace Rebus.Transports.Msmq
             if (transportMessage == null)
             {
                 throw new ArgumentException(
-                    string.Format("Object to serialize is not a TransportMessage - it's a {0}",
+                    string.Format("Object to serialize is not a TransportMessageToSend - it's a {0}",
                                   obj.GetType()));
             }
             message.BodyStream = new MemoryStream(transportMessage.Body);
             message.Extension = HeaderEcoding.GetBytes(DictionarySerializer.Serialize(transportMessage.Headers));
             message.Label = transportMessage.Label ?? "???";
+
+            var expressDelivery = transportMessage.Headers.ContainsKey(Headers.Express);
+
+            message.UseDeadLetterQueue = !expressDelivery;
+            message.Recoverable = !expressDelivery;
 
             if (transportMessage.Headers.ContainsKey(Headers.TimeToBeReceived))
             {
