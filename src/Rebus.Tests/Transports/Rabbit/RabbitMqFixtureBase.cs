@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NUnit.Framework;
+using RabbitMQ.Client;
 using Rebus.Bus;
 using Rebus.Logging;
 using Rebus.Persistence.InMemory;
@@ -35,7 +36,17 @@ namespace Rebus.Tests.Transports.Rabbit
         [TearDown]
         public void TearDown()
         {
-            toDispose.ForEach(b => b.Dispose());
+            toDispose.ForEach(b =>
+                {
+                    try
+                    {
+                        b.Dispose();
+                    }
+                    catch(Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+                });
             DoTearDown();
             RebusLoggerFactory.Reset();
         }
@@ -46,7 +57,9 @@ namespace Rebus.Tests.Transports.Rabbit
 
         protected RebusBus CreateBus(string inputQueueName, IActivateHandlers handlerActivator)
         {
-            var rabbitMqMessageQueue = new RabbitMqMessageQueue(ConnectionString, inputQueueName, inputQueueName + ".error").PurgeInputQueue();
+            var rabbitMqMessageQueue =
+                new RabbitMqMessageQueue(ConnectionString, inputQueueName)
+                    .PurgeInputQueue();
 
             var bus = new RebusBus(handlerActivator, rabbitMqMessageQueue, rabbitMqMessageQueue,
                                    new InMemorySubscriptionStorage(), new InMemorySagaPersister(), this,
@@ -62,6 +75,22 @@ namespace Rebus.Tests.Transports.Rabbit
         public virtual string GetEndpointFor(Type messageType)
         {
             throw new NotImplementedException(string.Format("Don't know the destination of {0} - override this method in derived classes", messageType));
+        }
+
+        public static void DeleteQueue(string recipientInputQueue)
+        {
+            using (var connection = new ConnectionFactory {Uri = ConnectionString}.CreateConnection())
+            using (var model = connection.CreateModel())
+            {
+                // just ignore if it fails...
+                try
+                {
+                    model.QueueDelete(recipientInputQueue);
+                }
+                catch
+                {
+                }
+            }
         }
     }
 }

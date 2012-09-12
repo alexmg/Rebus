@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Text;
+using Rebus.Bus;
 using Rebus.Logging;
 using System.Linq;
 using Rebus.Transports.Msmq;
@@ -166,7 +167,7 @@ http://www.netid.washington.edu/documentation/domains/sddl.aspx", GetListenUri()
 
                 using (var queue = MsmqMessageQueue.Sender())
                 {
-                    queue.Send(destinationQueue, receivedTransportMessage.ToForwardableMessage());
+                    queue.Send(destinationQueue, receivedTransportMessage.ToForwardableMessage(), new NoTransaction());
                 }
 
                 log.Info("Message was sent to {0}", destinationQueue);
