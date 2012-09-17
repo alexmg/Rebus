@@ -52,19 +52,22 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
+    <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Core" />
     <Reference Include="System.Messaging" />
+    <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Transactions" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="Topshelf">
-      <HintPath>..\packages\TopShelf.2.2.3.0\lib\NET40\Topshelf.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\..\lib\Topshelf\Topshelf.cs">
+      <Link>Topshelf.cs</Link>
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="ErrorText.cs" />
     <Compile Include="GatewayService.cs" />
     <Compile Include="Inbound\InboundService.cs" />
