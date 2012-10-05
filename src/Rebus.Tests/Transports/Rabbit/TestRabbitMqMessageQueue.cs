@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -7,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Transactions;
 using NUnit.Framework;
+using RabbitMQ.Client;
 using Rebus.Bus;
 using Rebus.Logging;
 using Rebus.RabbitMQ;
@@ -24,6 +26,52 @@ namespace Rebus.Tests.Transports.Rabbit
             RebusLoggerFactory.Current = new ConsoleLoggerFactory(true) { MinLevel = LogLevel.Info };
         }
 
+        [Test, Description("Because Rabbit can move around complex headers (i.e. heades whose values are themselves complete dictionaries), Rebus needs to be able to store these things, so that e.g. forwarding to error queues etc works as expected")]
+        public void RabbitTransportDoesNotChokeOnMessagesContainingComplexHeaders()
+        {
+            // arrange
+            const string recipientInputQueue = "test.roundtripping.receiver";
+            const string someText = "whoohaa!";
+
+            DeleteQueue(recipientInputQueue);
+
+            // ensure recipient queue is created...
+            using (var recipient = new RabbitMqMessageQueue(ConnectionString, recipientInputQueue))
+            {
+                // act
+                // send a message with a complex header
+                using (var connection = new ConnectionFactory { Uri = ConnectionString }.CreateConnection())
+                using (var model = connection.CreateModel())
+                {
+                    var props = model.CreateBasicProperties();
+                    props.Headers = new Hashtable
+                        {
+                            {
+                                "someKey", new Hashtable
+                                    {
+                                        {"someContainedKey", "someContainedValue"},
+                                        {"anotherContainedKey", "anotherContainedValue"},
+                                    }
+                            }
+                        };
+
+                    model.BasicPublish(RabbitMqMessageQueue.ExchangeName,
+                                       recipientInputQueue,
+                                       props,
+                                       Encoding.GetBytes(someText));
+                }
+
+                Thread.Sleep(2.Seconds());
+
+                // assert
+                var receivedTransportMessage = recipient.ReceiveMessage(new NoTransaction());
+                receivedTransportMessage.ShouldNotBe(null);
+                Encoding.GetString(receivedTransportMessage.Body).ShouldBe(someText);
+            }
+
+            // assert
+        }
+
         [Test, Description("Rabbit will ignore sent messages when they don't match a routing rule, in this case the topic with the same name of a recipient queue. Therefore, in order to avoid losing messages, recipient queues are automatically created.")]
         public void AutomatiallyCreatesRecipientQueue()
         {
@@ -33,6 +81,7 @@ namespace Rebus.Tests.Transports.Rabbit
             const string someText = "whoa! as if by magic!";
 
             // ensure recipient queue does not exist
+            DeleteQueue(senderInputQueue);
             DeleteQueue(recipientInputQueue);
 
             using (var sender = new RabbitMqMessageQueue(ConnectionString, senderInputQueue))
@@ -123,7 +172,7 @@ namespace Rebus.Tests.Transports.Rabbit
             Enumerable.Range(0, totalMessageCount).ToList()
                 .ForEach(
                     i => sender.Send(receiverInputQueue,
-                                new TransportMessageToSend {Body = Encoding.UTF7.GetBytes("w00t! message " + i)},
+                                new TransportMessageToSend { Body = Encoding.UTF7.GetBytes("w00t! message " + i) },
                                 new NoTransaction()));
 
             var totalSeconds = stopwatch.Elapsed.TotalSeconds;
@@ -252,6 +301,7 @@ namespace Rebus.Tests.Transports.Rabbit
 
         RabbitMqMessageQueue GetQueue(string queueName)
         {
+            queuesToDelete.Add(queueName);
             var queue = new RabbitMqMessageQueue(ConnectionString, queueName);
             toDispose.Add(queue);
             return queue.PurgeInputQueue();

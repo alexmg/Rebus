@@ -11,12 +11,13 @@ using RabbitMQ.Client.MessagePatterns;
 using Rebus.Bus;
 using Rebus.Logging;
 using Rebus.Shared;
+using Rebus.Extensions;
 
 namespace Rebus.RabbitMQ
 {
     public class RabbitMqMessageQueue : IMulticastTransport, IDisposable
     {
-        const string ExchangeName = "Rebus";
+        public const string ExchangeName = "Rebus";
         
         static readonly Encoding Encoding = Encoding.UTF8;
         static readonly TimeSpan BackoffTime = TimeSpan.FromMilliseconds(500);
@@ -31,6 +32,7 @@ namespace Rebus.RabbitMQ
         }
 
         readonly string inputQueueName;
+        readonly bool ensureExchangeIsDeclared;
 
         IConnection currentConnection;
         bool disposed;
@@ -41,9 +43,10 @@ namespace Rebus.RabbitMQ
         [ThreadStatic]
         static Subscription threadBoundSubscription;
 
-        public RabbitMqMessageQueue(string connectionString, string inputQueueName)
+        public RabbitMqMessageQueue(string connectionString, string inputQueueName, bool ensureExchangeIsDeclared = true)
         {
             this.inputQueueName = inputQueueName;
+            this.ensureExchangeIsDeclared = ensureExchangeIsDeclared;
 
             log.Info("Opening connection to Rabbit queue {0}", inputQueueName);
             connectionFactory = new ConnectionFactory { Uri = connectionString };
@@ -232,12 +235,17 @@ namespace Rebus.RabbitMQ
             log.Info("Initializing logical queue '{0}'", queueName);
             using (var model = GetConnection().CreateModel())
             {
-                log.Debug("Declaring exchange '{0}'", ExchangeName);
-                model.ExchangeDeclare(ExchangeName, ExchangeType.Topic, true);
+                if (ensureExchangeIsDeclared)
+                {
+                    log.Debug("Declaring exchange '{0}'", ExchangeName);
+                    model.ExchangeDeclare(ExchangeName, ExchangeType.Topic, true);
+                }
+
+                var arguments = new Hashtable {{"x-ha-policy", "all"}}; //< enable queue mirroring
 
                 log.Debug("Declaring queue '{0}'", queueName);
                 model.QueueDeclare(queueName, durable: true,
-                                   arguments: new Hashtable(), autoDelete: false, exclusive: false);
+                                   arguments: arguments, autoDelete: false, exclusive: false);
 
                 log.Debug("Binding topic '{0}' to queue '{1}'", queueName, queueName);
                 model.QueueBind(queueName, ExchangeName, queueName);
@@ -267,6 +275,29 @@ namespace Rebus.RabbitMQ
             context[CurrentModelKey] = threadBoundModel;
         }
 
+        static ReceivedTransportMessage GetReceivedTransportMessage(IBasicProperties basicProperties, byte[] body)
+        {
+            return new ReceivedTransportMessage
+                {
+                    Id = basicProperties != null
+                             ? basicProperties.MessageId
+                             : "(unknown)",
+                    Headers = basicProperties != null
+                                  ? GetHeaders(basicProperties)
+                                  : new Dictionary<string, object>(),
+                    Body = body,
+                };
+        }
+
+        static IDictionary<string, object> GetHeaders(IBasicProperties basicProperties)
+        {
+            var headers = basicProperties.Headers;
+            
+            if (headers == null) return new Dictionary<string, object>();
+
+            return headers.ToDictionary<string, object>(de => (string)de.Key, de => PossiblyDecode(de.Value));
+        }
+
         static IBasicProperties GetHeaders(IModel modelToUse, TransportMessageToSend message)
         {
             var props = modelToUse.CreateBasicProperties();
@@ -274,12 +305,11 @@ namespace Rebus.RabbitMQ
             if (message.Headers != null)
             {
                 props.Headers = message.Headers
-                    .ToDictionary(e => e.Key,
-                                  e => Encoding.GetBytes(e.Value));
+                    .ToHashtable(kvp => kvp.Key, kvp => PossiblyEncode(kvp.Value));
 
                 if (message.Headers.ContainsKey(Headers.ReturnAddress))
                 {
-                    props.ReplyTo = message.Headers[Headers.ReturnAddress];
+                    props.ReplyTo = (string)message.Headers[Headers.ReturnAddress];
                 }
             }
 
@@ -289,26 +319,18 @@ namespace Rebus.RabbitMQ
             return props;
         }
 
-        static ReceivedTransportMessage GetReceivedTransportMessage(IBasicProperties basicProperties, byte[] body)
+        static object PossiblyEncode(object value)
         {
-            return new ReceivedTransportMessage
-                {
-                    Id = basicProperties != null
-                             ? basicProperties.MessageId
-                             : "(unknown)",
-                    Headers = basicProperties != null
-                                  ? GetHeaders(basicProperties.Headers)
-                                  : new Dictionary<string, string>(),
-                    Body = body,
-                };
+            if (!(value is string)) return value;
+
+            return Encoding.GetBytes((string)value);
         }
 
-        static IDictionary<string, string> GetHeaders(IDictionary result)
+        static object PossiblyDecode(object value)
         {
-            if (result == null) return new Dictionary<string, string>();
+            if (!(value is byte[])) return value;
 
-            return result.Cast<DictionaryEntry>()
-                .ToDictionary(e => (string)e.Key, e => Encoding.GetString((byte[])e.Value));
+            return Encoding.GetString((byte[]) value);
         }
 
         IConnection GetConnection()
