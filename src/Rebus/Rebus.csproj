@@ -50,6 +50,7 @@
     <Reference Include="System.configuration" />
     <Reference Include="System.Messaging" />
     <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Transactions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
@@ -161,6 +162,16 @@
     <Compile Include="Serialization\DictionarySerializer.cs" />
     <Compile Include="Transports\Encrypted\RijndaelEncryptionTransportDecorator.cs" />
     <Compile Include="Transports\Encrypted\RijndaelHelper.cs" />
+    <Compile Include="Transports\Msmq\Management\MsDtcManagement.cs" />
+    <Compile Include="Transports\Msmq\Management\MsmqInstaller.cs" />
+    <Compile Include="Transports\Msmq\Management\MsmqManagement.cs" />
+    <Compile Include="Transports\Msmq\Management\MsmqManagementExtension.cs" />
+    <Compile Include="Transports\Msmq\Management\WindowsServer2003Installer.cs" />
+    <Compile Include="Transports\Msmq\Management\WindowsServer2008Installer.cs" />
+    <Compile Include="Transports\Msmq\Management\WindowsServer2008R2Installer.cs" />
+    <Compile Include="Transports\Msmq\Management\WindowsService.cs" />
+    <Compile Include="Transports\Msmq\Management\WindowsVersion.cs" />
+    <Compile Include="Transports\Msmq\Management\WindowsVistaInstaller.cs" />
     <Compile Include="Transports\Msmq\MsmqConfigurationExtension.cs" />
     <Compile Include="Shared\MsmqUtil.cs" />
     <Compile Include="TrivialPipelineInspector.cs" />
