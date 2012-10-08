@@ -4,7 +4,7 @@ namespace Rebus.Transports.Msmq.Management
 {
     public class WindowsVistaInstaller : IMsmqInstaller
     {
-        const string Arguments = "MSMQ-Container;MSMQ-Server;MSMQ-Multicasting /passive";
+        const string Arguments = "MSMQ-Container;MSMQ-Server /passive";
         const string OCSetup = "OCSETUP";
 
         public Process Install()

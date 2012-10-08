@@ -6,7 +6,7 @@ namespace Rebus.Transports.Msmq.Management
 {
     public class WindowsServer2008R2Installer : IMsmqInstaller
     {
-        const string Arguments = "-install MSMQ-Services MSMQ-Server MSMQ-Multicasting";
+        const string Arguments = "-install MSMQ-Services MSMQ-Server";
         const string ServerManager = "ServerManagerCmd.exe";
 
         public Process Install()

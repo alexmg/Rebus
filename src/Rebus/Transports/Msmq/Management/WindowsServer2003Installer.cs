@@ -8,12 +8,10 @@ namespace Rebus.Transports.Msmq.Management
     public class WindowsServer2003Installer : IMsmqInstaller
     {
         readonly IEnumerable<string> installComponents;
-        readonly IEnumerable<string> unsupportedComponents;
 
         public WindowsServer2003Installer()
         {
             installComponents = new[] {"msmq_Core", "msmq_LocalStorage"};
-            unsupportedComponents = new[] {"msmq_MulticastInstalled"};
         }
 
         public Process Install()
@@ -32,8 +30,8 @@ namespace Rebus.Transports.Msmq.Management
                 writer.WriteLine();
                 writer.WriteLine("[Components]");
 
-                foreach (string cmoponent in installComponents.Except(unsupportedComponents))
-                    writer.WriteLine(cmoponent + " = ON");
+                foreach (string component in installComponents)
+                    writer.WriteLine(component + " = ON");
 
                 writer.Flush();
             }

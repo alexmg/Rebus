@@ -165,7 +165,6 @@
     <Compile Include="Transports\Msmq\Management\MsDtcManagement.cs" />
     <Compile Include="Transports\Msmq\Management\MsmqInstaller.cs" />
     <Compile Include="Transports\Msmq\Management\MsmqManagement.cs" />
-    <Compile Include="Transports\Msmq\Management\MsmqManagementExtension.cs" />
     <Compile Include="Transports\Msmq\Management\WindowsServer2003Installer.cs" />
     <Compile Include="Transports\Msmq\Management\WindowsServer2008Installer.cs" />
     <Compile Include="Transports\Msmq\Management\WindowsServer2008R2Installer.cs" />
